@@ -136,6 +136,27 @@ async function fetchText(url) {
   return r.text();
 }
 
+function problems() {
+  const list = [];
+  if (!CFG.repo) {
+    list.push({ key: "GITHUB_REPO", text: "نام مخزن را تنظیم کنید (مثلاً aminchat/Froshgah) تا داده از همان‌جا خوانده شود." });
+  }
+  if (!CFG.token) {
+    list.push({
+      key: "GITHUB_TOKEN",
+      text: "برای دکمه «جمع‌آوری» یک Fine-grained PAT لازم است (Actions: write + Contents: read). اگر نمی‌خواهید، جمع‌آوری را با اسکریپت Codespaces انجام دهید؛ سایت باز هم نتایج را نشان می‌دهد.",
+      blocks_collect: true,
+    });
+  }
+  if (!CFG.password && !CFG.allowPublic) {
+    list.push({ key: "SITE_PASSWORD", text: "رمز ورود سایت تنظیم نشده — تا ALLOW_PUBLIC_DATA=1 نگذارید، هیچ‌کس نمی‌تواند ببیند." });
+  }
+  if (CFG.secret === "froshgah-dev-secret") {
+    list.push({ key: "APP_SECRET", text: "APP_SECRET هنوز مقدار پیش‌فرض است؛ یک عبارت تصادفی بگذارید و همان را در GitHub Actions Secret هم بگذارید." });
+  }
+  return list;
+}
+
 /* —————————— داده —————————— */
 function dataUrl() {
   if (CFG.dataUrl) return CFG.dataUrl;
@@ -202,12 +223,17 @@ function toCsv(stores) {
 async function api(req, res, path) {
   const authed = Boolean(readSession(req)) || (!CFG.password && CFG.allowPublic);
 
-  if (path === "/api/health") {
+  if (path === "/api/health" || path === "/api/config") {
+    const list = problems();
     return send(res, 200, {
-      ok: true,
+      ok: list.length === 0,
       login_required: Boolean(CFG.password),
-      data_source: dataUrl() ? "github" : "unset",
+      data_source: dataUrl() ? (CFG.dataUrl ? "custom" : "github") : "unset",
       can_dispatch: Boolean(CFG.repo && CFG.token),
+      repo: CFG.repo,
+      ref: CFG.ref,
+      workflow: CFG.workflow,
+      missing: list,
     });
   }
 
@@ -266,8 +292,14 @@ async function api(req, res, path) {
   }
 
   if (path === "/api/collect" && req.method === "POST") {
-    if (!CFG.repo || !CFG.token) {
-      return send(res, 500, { error: "GITHUB_TOKEN و GITHUB_REPO را در Vercel تعریف کنید." });
+    const blocked = problems().filter((p) => p.blocks_collect || p.key === "GITHUB_REPO");
+    if (blocked.length) {
+      return send(res, 200, {
+        ok: false,
+        message: "سرویس هنوز به گیت‌هاب وصل نشده، برای همین هیچ جمعی انجام نمی‌شود.",
+        missing: blocked,
+        help: "دو راه: (۱) در Vercel متغیرهای GITHUB_REPO و GITHUB_TOKEN را پر کنید، (۲) یا جمع‌آوری را با ./scripts/collect-and-publish.sh در Codespaces اجرا کنید — سایت فقط نمایش می‌دهد.",
+      });
     }
     const b = await parseBody(req);
     const clean = (v, n = 120) => String(v ?? "").trim().slice(0, n);

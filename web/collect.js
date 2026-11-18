@@ -41,11 +41,38 @@
     else localStorage.removeItem(KEY);
   }
 
+  function renderMissing(list, prefix = "") {
+    const box = $("cfglist");
+    if (!box) return;
+    if (!list || !list.length) {
+      box.hidden = true;
+      box.textContent = "";
+      return;
+    }
+    box.hidden = false;
+    box.innerHTML = `<b>${prefix || "تنظیمات لازم:"}</b><ul>` +
+      list.map((p) => `<li><code>${p.key}</code> — ${p.text}</li>`).join("") + `</ul>`;
+  }
+
   $("openCollect").addEventListener("click", () => {
     load();
     msg.textContent = "";
     dlg.showModal();
+    checkConfig();
   });
+
+  async function checkConfig() {
+    try {
+      const r = await fetch("/api/config", { cache: "no-store", credentials: "same-origin" });
+      if (!r.ok) return;
+      const cfg = await r.json();
+      cfgRef = cfg;
+      renderMissing(cfg.ok ? [] : cfg.missing, cfg.ok ? "" : "قبل از کلیک، این‌ها را کامل کنید:");
+      state.textContent = cfg.ok
+        ? `✓ سرویس آماده است · مخزن ${cfg.repo}@${cfg.ref}`
+        : `⚠️ سرویس آماده نیست: ${cfg.missing.map((m) => m.key).join("، ")}`;
+    } catch { /* سرویس در دسترس نیست */ }
+  }
 
   async function post(path, body) {
     const r = await fetch(path, {
@@ -83,6 +110,16 @@
     };
     try {
       const out = await post("/api/collect", body);
+      if (out.ok === false) {
+        msg.className = "err";
+        msg.textContent = `⚠️ ${out.message}`;
+        renderMissing(out.missing, "برای فعال‌شدن این دکمه:");
+        if (out.help) {
+          const box = $("cfghelp");
+          if (box) { box.hidden = false; box.textContent = out.help; }
+        }
+        return;
+      }
       save();
       msg.className = "ok";
       msg.textContent = `✅ ${out.message} (${out.counts.hashtags} هشتگ، ${out.counts.queries} عبارت تلگرام)`;
@@ -97,6 +134,7 @@
   });
 
   let timer = null;
+  let cfgRef = null;
   async function refreshStatus(force) {
     try {
       const r = await fetch("/api/status", { cache: "no-store" });
@@ -120,5 +158,6 @@
       if (force) setTimeout(() => location.reload(), 2500);
     } catch { /* سرویس در دسترس نیست */ }
   }
+  checkConfig();
   refreshStatus(false);
 })();
