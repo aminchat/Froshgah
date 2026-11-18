@@ -180,6 +180,15 @@ def _cmd_doctor(_args) -> int:
     return 0 if report() else 1
 
 
+def _cmd_secret(args) -> int:
+    """یک رشته تصادفی قوی می‌سازد (برای APP_SECRET و SITE_PASSWORD)."""
+    import secrets
+
+    for _ in range(max(1, args.count)):
+        print(secrets.token_hex(args.bytes))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="froshgah",
@@ -256,6 +265,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("doctor", help="بررسی آماده‌به‌کاری محیط")
     p.set_defaults(func=_cmd_doctor)
+
+    p = sub.add_parser("secret", help="ساخت رشته تصادفی برای APP_SECRET یا SITE_PASSWORD")
+    p.add_argument("--count", type=int, default=1, help="چند رشته بسازد")
+    p.add_argument("--bytes", type=int, default=24, help="بایت آنتروپی هر رشته (پیش‌فرض ۲۴)")
+    p.set_defaults(func=_cmd_secret)
 
     return parser
 
