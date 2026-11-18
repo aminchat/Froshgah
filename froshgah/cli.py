@@ -136,6 +136,23 @@ def _cmd_run(args) -> int:
     return 1 if errs and not summary["stores_total"] else 0
 
 
+def _cmd_setup(args) -> int:
+    from .setup_wizard import run_setup, status
+
+    if args.check:
+        status()
+        return 0
+    run_setup(use_env=args.from_env)
+    return 0
+
+
+def _cmd_doctor(_args) -> int:
+    from .doctor import report
+
+    print("🩺 بررسی آماده‌به‌کاری\n")
+    return 0 if report() else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="froshgah",
@@ -200,6 +217,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--data", default="data/stores.json")
     p.add_argument("--out", default="docs")
     p.set_defaults(func=_cmd_site)
+
+    p = sub.add_parser("setup", help="پرسش و ساخت فایل .env (رمزها فقط در همین رایانه می‌مانند)")
+    p.add_argument("--check", action="store_true", help="فقط وضعیت فعلی را نشان بده")
+    p.add_argument("--from-env", action="store_true", help="از متغیرهای محیطی بردار، سؤال نپرس")
+    p.set_defaults(func=_cmd_setup)
+
+    p = sub.add_parser("doctor", help="بررسی آماده‌به‌کاری محیط")
+    p.set_defaults(func=_cmd_doctor)
 
     return parser
 
