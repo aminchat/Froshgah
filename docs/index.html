@@ -55,6 +55,44 @@
     <div class="statline" id="summary"></div>
   </section>
 
+  <section id="collectbar" class="collectbar" hidden>
+    <button id="openCollect" class="ghost">⚙️ جمع‌آوری تازه از اینستاگرام/تلگرام</button>
+    <a class="ghost" href="/api/export.csv" id="csv">⬇ دانلود CSV</a>
+    <span id="runstate" class="dim"></span>
+  </section>
+
+  <dialog id="dlg">
+    <form method="dialog" class="dlgform">
+      <h2>جمع‌آوری</h2>
+      <p class="dim">اطلاعات فقط برای همین اجرا استفاده می‌شود و جایی ذخیره نمی‌شود؛ اگر تیک «یادآوری» را بزنید فقط در همین مرورگر می‌ماند.</p>
+      <div class="cols">
+        <label>هشتگ‌های اینستاگرام <input id="hashtags" placeholder="پوشاک,مانتو_زنانه"></label>
+        <label>عبارت‌های تلگرام <input id="queries" placeholder="فروشگاه پوشاک,مزون"></label>
+      </div>
+      <div class="cols">
+        <label>نام کاربری اینستاگرام <input id="ig_user" autocomplete="username"></label>
+        <label>رمز اینستاگرام <input id="ig_pass" type="password" autocomplete="current-password"></label>
+      </div>
+      <div class="cols">
+        <label>TG_API_ID <input id="tg_api_id" inputmode="numeric"></label>
+        <label>TG_API_HASH <input id="tg_api_hash"></label>
+      </div>
+      <p class="hint">برای تلگرام فقط <code>TG_API_ID</code> و <code>TG_API_HASH</code> را بدهید؛
+        فایل سشن از راز <code>TG_SESSION_B64</code> در گیت‌هاب خوانده می‌شود
+        (اینجا جای آن نیست). اگر تلگرام را نمی‌خواهید، این دو خانه را خالی بگذارید.</p>
+      <div class="cols">
+        <label>تعداد برای هر عبارت <input id="limit" type="number" min="1" max="100" value="25"></label>
+        <label class="toggle"><input type="checkbox" id="bios" checked> خواندن بیوی پیج‌ها</label>
+        <label class="toggle"><input type="checkbox" id="remember"> یادآوری در همین مرورگر</label>
+      </div>
+      <p id="dlgmsg" class="err"></p>
+      <menu>
+        <button value="cancel" class="ghost">بستن</button>
+        <button id="go" class="primary" type="button">شروع جمع‌آوری</button>
+      </menu>
+    </form>
+  </dialog>
+
   <section id="results" class="grid" aria-live="polite"></section>
 
   <div id="more" class="morebox" hidden>
@@ -65,12 +103,14 @@
 <footer class="foot">
   <div class="wrap">
     <p>
-      داده‌ها به‌صورت خودکار از پست‌ها و پیام‌های عمومی استخراج می‌شود و ممکن است دقیق یا به‌روز نباشد.
+      داده‌ها از پست‌ها و پیام‌های عمومی استخراج می‌شود و ممکن است دقیق یا به‌روز نباشد.
       <span class="dim">·</span> اگر فروشنده‌ای هستید و می‌خواهید حذف شوید، یک issue بگذارید.
     </p>
   </div>
 </footer>
 
+<!-- پنل جمع‌آوری فقط در نسخه سرویس‌دار فعال است -->
 <script src="app.js"></script>
+<script src="collect.js"></script>
 </body>
 </html>

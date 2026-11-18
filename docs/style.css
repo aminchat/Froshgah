@@ -84,3 +84,30 @@ mark { background: color-mix(in srgb, var(--accent) 35%, transparent); color: in
 .skel { height: 96px; border-radius: var(--radius); background: linear-gradient(90deg, var(--card), var(--card-2), var(--card)); background-size: 200% 100%; animation: s 1.2s linear infinite; }
 @keyframes s { to { background-position: -200% 0; } }
 @media (max-width: 520px) { .top h1 { font-size: 1.25rem; } .panel { position: static; } }
+
+/* ——— پنل جمع‌آوری و گفت‌وگوی تنظیمات (فقط در نسخه سرویس‌دار) ——— */
+.collectbar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin: 0 0 .9rem; }
+.collectbar .dim { font-size: .84rem; }
+.err { color: #ff8a8a; font-size: .86rem; min-height: 1.2em; margin: .3rem 0 0; }
+.ok { color: var(--accent); font-size: .86rem; min-height: 1.2em; margin: .3rem 0 0; }
+dialog { border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: var(--radius); padding: 0; width: min(680px, calc(100% - 2rem)); }
+dialog::backdrop { background: rgba(4, 6, 10, .62); backdrop-filter: blur(2px); }
+.dlgform { padding: 1.1rem 1.2rem 1rem; display: flex; flex-direction: column; gap: .55rem; }
+.dlgform h2 { margin: 0; font-size: 1.1rem; }
+.dlgform .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .55rem; }
+.dlgform label { display: flex; flex-direction: column; gap: .25rem; font-size: .84rem; color: var(--dim); }
+.dlgform label.toggle { flex-direction: row; align-items: center; gap: .4rem; color: var(--fg); }
+.dlgform input[type=text], .dlgform input:not([type]), .dlgform input[type=number], .dlgform input[type=password],
+.dlgform textarea { background: var(--card-2); border: 1px solid var(--line); color: var(--fg); border-radius: 9px; padding: .5rem .6rem; font: inherit; font-size: .9rem; width: 100%; }
+.dlgform textarea { resize: vertical; direction: ltr; }
+.dlgform input:focus, .dlgform textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+.dlgform menu { display: flex; justify-content: flex-start; gap: .5rem; margin: .3rem 0 0; padding: 0; }
+button.primary { background: var(--accent); color: #06120d; border: 0; border-radius: 10px; padding: .5rem 1rem; font: inherit; font-weight: 600; cursor: pointer; }
+button.primary:hover { filter: brightness(1.08); }
+.auth { display: grid; place-items: center; min-height: 100vh; }
+.authbox { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; width: min(420px, calc(100% - 2rem)); display: flex; flex-direction: column; gap: .7rem; }
+.authbox h1 { margin: 0; font-size: 1.2rem; }
+.authbox p { margin: 0; color: var(--dim); font-size: .9rem; }
+.authbox input { width: 100%; background: var(--card-2); border: 1px solid var(--line); color: var(--fg); border-radius: 10px; padding: .6rem .7rem; font: inherit; }
+.authbox button { margin-top: .3rem; }
+.authbox small { color: var(--dim); font-size: .76rem; }

@@ -56,8 +56,12 @@ def test_telegram_chat_title():
 def test_telegram_requires_api_and_query(tmp_path, monkeypatch):
     from types import SimpleNamespace
 
+    from froshgah import config
+
     monkeypatch.setattr(
-        tg, "settings", SimpleNamespace(tg_api_id=0, tg_api_hash="", request_delay=0.1, tg_session_path="")
+        config, "settings", SimpleNamespace(tg_api_id=0, tg_api_hash="", request_delay=0.1, tg_session_path="")
     )
     with pytest.raises(RuntimeError):
         tg._require_api()
+    monkeypatch.setattr(config, "settings", SimpleNamespace(tg_api_id=1, tg_api_hash="h"))
+    tg._require_api()  # نباید خطا بدهد

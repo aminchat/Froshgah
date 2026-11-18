@@ -39,9 +39,10 @@ def test_run_job_reports_errors_without_crashing(tmp_path, monkeypatch):
     monkeypatch.setenv("DB_PATH", str(tmp_path / "run2.db"))
     from types import SimpleNamespace
 
-    from froshgah import run as run_module
+    from froshgah import config
 
-    monkeypatch.setattr(run_module, "settings", SimpleNamespace(tg_api_id=0, tg_api_hash=""))
+    monkeypatch.setattr(config, "settings", SimpleNamespace(tg_api_id=0, tg_api_hash="", request_delay=0.1,
+                                                            tg_session_path="", ig_username="", ig_password=""))
     data = tmp_path / "d.json"
     summary = run_job(telegram_queries="پوشاک", limit=5, data_file=data, site_dir=None,
                       db=Database(tmp_path / "run2.db"))

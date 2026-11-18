@@ -24,6 +24,12 @@ on:
         description: "بیوی نویسنده‌ها خوانده نشود (سریع‌تر، مطمئن‌تر)"
         type: boolean
         default: false
+      payload:
+        description: "بار رمزنگاری‌شده پنل وب (خودکار پر می‌شود؛ دستی خالی بگذارید)"
+        default: ""
+      source:
+        description: "منبع درخواست"
+        default: "manual"
 
   # برای اجرا خودکار هر روز، این چهار خط را از حالت کامنت خارج کنید:
   # schedule:
@@ -47,6 +53,7 @@ jobs:
         shell: bash
     env:
       REQUEST_DELAY: "2"
+      APP_SECRET: ${{ secrets.APP_SECRET }}
       TG_API_ID: ${{ secrets.TG_API_ID }}
       TG_API_HASH: ${{ secrets.TG_API_HASH }}
       IG_USERNAME: ${{ secrets.IG_USERNAME }}
@@ -70,6 +77,8 @@ jobs:
 
       - name: جمع‌آوری و ساخت سایت
         env:
+          PAYLOAD: ${{ inputs.payload }}
+          VERCEL_DIR: vercel
           IG_TAGS: ${{ inputs.ig_tags }}
           IG_KEYWORDS: ${{ inputs.ig_keywords }}
           TG_QUERIES: ${{ inputs.tg_queries }}

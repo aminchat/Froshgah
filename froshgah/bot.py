@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import html
 
-from .config import settings
+from . import config
 from .db import get_db
 from .ui import format_store
 
@@ -12,14 +12,14 @@ _MAX_MSG = 3900
 
 
 def _is_owner(update) -> bool:
-    if not settings.owner_id:
+    if not config.settings.owner_id:
         return False
     user = update.effective_user
-    return bool(user and user.id == settings.owner_id)
+    return bool(user and user.id == config.settings.owner_id)
 
 
 def _owner_hint() -> str:
-    if not settings.owner_id:
+    if not config.settings.owner_id:
         return "⚠️ شناسه مدیر (TELEGRAM_OWNER_ID) در فایل .env تنظیم نشده است."
     return "⛔ فقط مدیر ربات می‌تواند این دستور را اجرا کند."
 
@@ -151,7 +151,7 @@ async def cmd_error(update, _ctx) -> None:
 
 
 def run_bot() -> None:
-    if not settings.telegram_bot_token:
+    if not config.settings.telegram_bot_token:
         raise SystemExit(
             "TELEGRAM_BOT_TOKEN در فایل .env تنظیم نشده است.\n"
             "از @BotFather توکن بگیرید و در .env قرار دهید."
@@ -159,7 +159,7 @@ def run_bot() -> None:
     from telegram import Update
     from telegram.ext import Application, CommandHandler
 
-    app = Application.builder().token(settings.telegram_bot_token).build()
+    app = Application.builder().token(config.settings.telegram_bot_token).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("help", cmd_start))
     app.add_handler(CommandHandler("search", cmd_search))

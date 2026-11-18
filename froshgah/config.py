@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, fields, replace
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -70,6 +70,39 @@ def get_settings() -> Settings:
         ig_password=os.getenv("IG_PASSWORD", "").strip(),
         request_delay=_env_float("REQUEST_DELAY", 1.5),
     )
+
+
+_INT_FIELDS = {"owner_id", "tg_api_id"}
+_FLOAT_FIELDS = {"request_delay"}
+
+
+def apply_overrides(**values) -> Settings:
+    """در زمان اجرا چند کلید را عوض می‌کند (برای باری که پنل web می‌فرستد).
+
+    فقط در همین پروسه و همین حافظه می‌ماند؛ فایل .env دست‌نخورده است.
+    """
+    global settings
+    data = {}
+    for f in fields(Settings):
+        new = values.get(f.name)
+        current = getattr(settings, f.name)
+        if new in (None, "", b""):
+            data[f.name] = current
+            continue
+        if f.name in _INT_FIELDS:
+            digits = "".join(ch for ch in str(new) if ch.isdigit())
+            data[f.name] = int(digits) if digits else current
+        elif f.name in _FLOAT_FIELDS:
+            try:
+                data[f.name] = float(new)
+            except (TypeError, ValueError):
+                data[f.name] = current
+        elif f.name == "db_path":
+            data[f.name] = Path(str(new))
+        else:
+            data[f.name] = str(new)
+    settings = Settings(**data)
+    return settings
 
 
 settings = get_settings()

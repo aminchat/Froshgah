@@ -10,7 +10,7 @@ import re
 import time
 from typing import Iterator
 
-from ..config import settings
+from .. import config
 from ..db import get_db
 from ..extract import extract_stores
 
@@ -33,9 +33,9 @@ def _make_loader():
     allowed = set(inspect.signature(Instaloader.__init__).parameters)
     kwargs = {k: v for k, v in _LOADER_KWARGS.items() if k in allowed}
     loader = Instaloader(**kwargs)
-    if settings.ig_username and settings.ig_password:
+    if config.settings.ig_username and config.settings.ig_password:
         try:
-            loader.login(settings.ig_username, settings.ig_password)
+            loader.login(config.settings.ig_username, config.settings.ig_password)
         except Exception:  # noqa: BLE001
             # ادامه به‌صورت ناشناس؛ معمولاً هشتگ‌ها محدودتر می‌شوند
             pass
@@ -124,7 +124,7 @@ def collect_instagram(
 
     همگام (blocking) است — داخل ربات باید در thread جداگانه صدا زده شود.
     """
-    delay = settings.request_delay if delay is None else delay
+    delay = config.settings.request_delay if delay is None else delay
     db = get_db()
     result: dict = {"posts": 0, "stores": 0, "authors": 0, "errors": [], "platform": "instagram"}
     if not hashtag and not keyword:

@@ -21,6 +21,10 @@ TG_QUERIES="${TG_QUERIES-فروشگاه پوشاک,مزون مانتو}"
 LIMIT="${LIMIT-25}"
 EXTRA=""
 [ "${NO_BIOS:-0}" = "1" ] && EXTRA="--no-bios"
+PAYLOAD="${PAYLOAD:-}"                       # بار رمزنگاری‌شده پنل وب (اختیاری)
+VERCEL_DIR="${VERCEL_DIR:-}"                  # مثل vercel → پوشه public آن هم ساخته می‌شود
+[ -n "$VERCEL_DIR" ] && EXTRA="$EXTRA --vercel-dir $VERCEL_DIR"
+[ -n "$PAYLOAD" ] && EXTRA="$EXTRA --payload $PAYLOAD"
 
 echo "▶ جمع‌آوری | IG: «$IG_TAGS» + «$IG_KEYWORDS» | TG: «$TG_QUERIES» | limit: $LIMIT"
 "$PY" -m froshgah run \
@@ -36,6 +40,7 @@ echo
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 git add data docs
+[ -n "$VERCEL_DIR" ] && git add "$VERCEL_DIR/public" || true
 if git diff --cached --quiet; then
   echo "✓ تغییری نبود؛ چیزی پوش نشد."
   exit 0

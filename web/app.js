@@ -3,6 +3,8 @@
   "use strict";
 
   const PAGE = 30;
+  const APPCFG = window.FROSHGAH || {};
+  const DATA_SRC = APPCFG.data || "data/stores.json";
   const state = { all: [], view: [], tokens: [], limit: PAGE, generated: "" };
   const $ = (id) => document.getElementById(id);
   const els = {
@@ -162,10 +164,12 @@
     els.results.innerHTML = ['','', ''].map(() => '<div class="skel"></div>').join("");
     let data;
     try {
-      data = await fetch(new URL("data/stores.json", document.baseURI), { cache: "no-store" }).then((r) => {
-        if (!r.ok) throw new Error(r.status);
-        return r.json();
-      });
+      data = await fetch(new URL(DATA_SRC, document.baseURI), { cache: "no-store", credentials: "same-origin" })
+        .then(async (r) => {
+          if (r.status === 401 && APPCFG.login) { location.href = APPCFG.login; throw new Error("نیاز به ورود"); }
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        });
     } catch (e) {
       els.meta.textContent = "فایل داده پیدا نشد — اول workflow جمع‌آوری را اجرا کنید.";
       els.results.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>داده‌ای وجود ندارد</b>${esc(String(e))}</div>`;

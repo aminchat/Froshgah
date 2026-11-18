@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import asyncio
 
-from ..config import settings
+from .. import config
 from ..db import get_db
 from ..extract import extract_stores
 
 
 def _require_api() -> None:
-    if not settings.tg_api_id or not settings.tg_api_hash:
+    if not config.settings.tg_api_id or not config.settings.tg_api_hash:
         raise RuntimeError("TG_API_ID و TG_API_HASH در فایل .env تنظیم نشده است.")
 
 
@@ -18,7 +18,7 @@ async def login_interactive() -> str:
     from telethon import TelegramClient
 
     _require_api()
-    client = TelegramClient(settings.tg_session_path, settings.tg_api_id, settings.tg_api_hash)
+    client = TelegramClient(config.settings.tg_session_path, config.settings.tg_api_id, config.settings.tg_api_hash)
     await client.start()
     me = await client.get_me()
     await client.disconnect()
@@ -52,7 +52,7 @@ async def collect_telegram(
     from telethon.tl.types import InputMessagesFilterEmpty, InputPeerEmpty
 
     _require_api()
-    delay = settings.request_delay if delay is None else delay
+    delay = config.settings.request_delay if delay is None else delay
     db = get_db()
     result: dict = {"messages": 0, "stores": 0, "channels": [], "errors": [], "platform": "telegram"}
 
@@ -60,7 +60,7 @@ async def collect_telegram(
         result["errors"].append("عبارت جستجو خالی است.")
         return result
 
-    client = TelegramClient(settings.tg_session_path, settings.tg_api_id, settings.tg_api_hash)
+    client = TelegramClient(config.settings.tg_session_path, config.settings.tg_api_id, config.settings.tg_api_hash)
     try:
         await client.connect()
     except Exception as e:  # noqa: BLE001

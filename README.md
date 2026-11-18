@@ -64,6 +64,46 @@ Pages روی این مخزن از شاخه کاری، پوشه `/docs` فعال 
 
 اگر روزی خواستید مسیر انتشار را عوض کنید: Settings → **Pages** → Source: *Deploy from a branch* → شاخه و `/docs`.
 
+## راه سوم: سرویس وب روی Vercel (لاگین و فرم در خود صفحه)
+
+اگر می‌خواهید مثل یک اپ واقعی باشد: آدرس ثابت، **صفحه ورود**، و دکمه «جمع‌آوری» که همان‌جا نام کاربری/رمز اینستاگرام را می‌گیرد — این نسخه در پوشه `vercel/` است (Node.js بدون هیچ کتابخانه‌ای).
+
+**چطور کار می‌کند:**
+
+```
+مرورگر شما ──▶ Vercel (قفل لاگین + جستجو)        ──▶ داده را از مخزن می‌خواند
+                    │
+                    └─▶ GitHub Actions (موتور پایتون: instaloader + Telethon)
+                              └─▶ data/stores.json را کامیت می‌کند ──▶ Vercel و Pages هر دو به‌روز می‌شوند
+```
+
+- رمز اینستاگرام/تلگرام **جایی ذخیره نمی‌شود**: سرور Vercel آن را با AES-256-GCM رمزنگاری می‌کند، به‌عنوان `payload` به Actions می‌دهد، و پایتون فقط در حافظه همان اجرا بازش می‌کند. در صفحه اجراهای Actions فقط متن رمزنگاری‌شده دیده می‌شود.
+- Vercel اسکرپ نمی‌کند (محدودیت زمان Functionها)؛ فقط لاگین، جستجو و فرمان اجرا را انجام می‌دهد. کار سنگین همان‌جا است که پایتون و ۳۰ دقیقه زمان دارد.
+- برای اینکه مخزن خصوصی بماند هم همین معماری کار می‌کند: سرور با `GITHUB_TOKEN` داده را از API می‌خواند (نیازی به عمومی‌بودن مخزن نیست).
+
+**متغیرهای محیطی Vercel (Project → Settings → Environment Variables):**
+
+| نام | توضیح |
+|---|---|
+| `SITE_PASSWORD` | رمزی که در صفحه ورود می‌زنید (خودتان یک عبارت بلند بسازید) |
+| `APP_SECRET` | کلید رمزنگاری بارِ فرم و امضای کوکی؛ **باید** در GitHub هم به‌عنوان Secret با همین مقدار باشد |
+| `GITHUB_REPO` | مثل `aminchat/Froshgah` |
+| `GITHUB_REF` | شاخه‌ای که داده در آن است (فعلاً `arena/e5aae2ae-froshgah`) |
+| `GITHUB_TOKEN` | یک Fine-grained PAT با اجازه `Contents: Read` (+ `Actions: Write` برای دکمه جمع‌آوری) |
+| `WORKFLOW_FILE` | پیش‌فرض `collect.yml` |
+| `ALLOW_PUBLIC_DATA` | فقط اگر خواستید سایت بدون لاگین باز باشد: `1` |
+
+**سمت گیت‌هاب:** یک Actions Secret به نام `APP_SECRET` با همان مقدار Vercel بسازید. دکمه «جمع‌آوری از صفحه» فقط وقتی کار می‌کند که فایل `collect.yml` روی `GITHUB_REF` باشد (گیت‌هاب اجرای workflow را از شاخه‌های دیگر بیرون از default branch نمی‌پذیرد؛ اگر ۴۰۴ گرفتید، یعنی همان قانون).
+
+**تست محلی:**
+
+```bash
+cd vercel && node dev-server.js     # رمز تصادفی می‌سازد و چاپ می‌کند → http://127.0.0.1:8000
+node tests/web_smoke.mjs            # تست یکپارچه سرویس (۱۲ بررسی)
+```
+
+**دیپلوی:** در Vercel گزینه *Import Git Repository* → مخزن این پروژه → **Root Directory = `vercel`** → بدون build command (فایل‌های سایت از `vercel/public` سرو می‌شوند و `vercel/api/index.js` همان تابع سرور است). پوشه `vercel/public/` با `python -m froshgah site --vercel-dir vercel` بازسازی و کامیت می‌شود.
+
 ## ربات تلگرام (اختیاری)
 
 ربات به یک سرویس **همیشه‌روشن** نیاز دارد؛ گیت‌هاب جای آن نیست (Actions کارهای کوتاه اجرا می‌کند، Pages فقط فایل ایستا می‌دهد). اگر خواستید، در همان Codespaces بزنید `python -m froshgah bot` (تا پنجره باز است کار می‌کند) یا روی یک VPS ارزان. دستورات: `/search`، `/latest`، `/stats`، `/collect_ig`، `/collect_tg` (دو تای آخر فقط برای مدیر).
@@ -109,7 +149,12 @@ froshgah/            موتور پایتون (استخراج، دیتابیس، 
 ├── db.py            SQLite + جستجو و ادغام
 ├── bot.py / cli.py  ربات تلگرام و خط فرمان
 └── collectors/      instagram.py (instaloader) و telegram.py (Telethon)
-web/                 سایت ایستا (HTML/CSS/JS خالص، جستجو سمت مرورگر)
+web/                 سایت ایستا (HTML/CSS/JS خالص، جستجو سمت مرورگر) — منبع هر دو نسخه
+vercel/              سرویس وب برای Vercel: قفل لاگین + فرم جمع‌آوری (Node بدون وابستگی)
+├── api/index.js     هندلر: /api/login /api/data /api/status /api/collect /api/export.csv
+├── public/          خروجی build از web/ (با `site --vercel-dir vercel` ساخته می‌شود)
+└── dev-server.js    اجرای همان سرویس روی کامپیوتر خودتان
+froshgah/payload.py  رمزنگاری AES-256-GCM بار فرم (هم‌خوان با node:crypto)
 scripts/collect-and-publish.sh   جمع‌آوری + انتشار با یک دستور
 data/stores.json     داده‌ها (در گیت کامیت می‌شود)
 docs/                خروجی سایت — منبع انتشار GitHub Pages
