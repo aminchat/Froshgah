@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>فروشگاه‌یاب پوشاک · اینستاگرام و تلگرام</title>
+<meta name="description" content="جستجو در فروشگاه‌های پوشاک پیدا‌شده از اینستاگرام و تلگرام">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>🏪 فروشگاه‌یاب پوشاک</h1>
+    <p class="sub">
+      نتیجه‌ی اسکن هشتگ‌های اینستاگرام و جستجوی تلگرام —
+      <span id="meta">در حال بارگذاری…</span>
+    </p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="panel">
+    <div class="search-row">
+      <input id="q" type="search" autocomplete="off" placeholder="جستجو: مانتو، تهران، ۰۹۱۲…، @یوزرنیم" aria-label="عبارت جستجو">
+      <button id="clear" class="ghost" title="پاک کردن" hidden>✕</button>
+    </div>
+
+    <div class="filters">
+      <label class="chip">
+        منبع
+        <select id="source">
+          <option value="">همه</option>
+          <option value="instagram">📸 اینستاگرام</option>
+          <option value="telegram">✈️ تلگرام</option>
+        </select>
+      </label>
+      <label class="chip">
+        شهر
+        <select id="city"><option value="">همه شهرها</option></select>
+      </label>
+      <label class="chip">
+        دسته
+        <select id="cat"><option value="">همه دسته‌ها</option></select>
+      </label>
+      <label class="chip toggle"><input type="checkbox" id="onlyphone"> فقط شماره‌دار</label>
+      <label class="chip">
+        ترتیب
+        <select id="sort">
+          <option value="match">بهترین تطابق</option>
+          <option value="new">جدیدترین</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="statline" id="summary"></div>
+  </section>
+
+  <section id="results" class="grid" aria-live="polite"></section>
+
+  <div id="more" class="morebox" hidden>
+    <button id="moreBtn" class="ghost">نمایش بیشتر…</button>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>
+      داده‌ها به‌صورت خودکار از پست‌ها و پیام‌های عمومی استخراج می‌شود و ممکن است دقیق یا به‌روز نباشد.
+      <span class="dim">·</span> اگر فروشنده‌ای هستید و می‌خواهید حذف شوید، یک issue بگذارید.
+    </p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

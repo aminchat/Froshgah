@@ -1,0 +1,99 @@
+name: collect
+
+# جمع‌آوری فروشگاه‌ها + ساخت سایت — بدون نصب چیزی روی کامپیوتر شما.
+# اجرا: تب Actions ← «collect» ← Run workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      ig_tags:
+        description: "هشتگ‌های اینستاگرام (با کاما، بدون #)"
+        default: "پوشاک,مانتو,فروشگاه_پوشاک,پوشاک_مردانه"
+      ig_keywords:
+        description: "کلیدواژه‌های اینستاگرام (اختیاری)"
+        default: ""
+      tg_queries:
+        description: "عبارت‌های جستجوی تلگرام (با کاما)"
+        default: "فروشگاه پوشاک,مزون مانتو,پوشاک عمده"
+      limit:
+        description: "حداکثر پست/پیام برای هر عبارت"
+        type: choice
+        default: "25"
+        options: ["10", "25", "50", "100"]
+      no_bios:
+        description: "بیوی نویسنده‌ها خوانده نشود (سریع‌تر، مطمئن‌تر)"
+        type: boolean
+        default: false
+
+  # برای اجرا خودکار هر روز، این چهار خط را از حالت کامنت خارج کنید:
+  # schedule:
+  #   - cron: "45 2 * * *"   # ۰۶:۱۵ به وقت تهران
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    # اگر اینستاگرام شما را بلاک کرد، یک runner شخصی روی VPS خودتان نصب کنید
+    # و خط بالا را به «runs-on: self-hosted» تغییر دهید.
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      REQUEST_DELAY: "2"
+      TG_API_ID: ${{ secrets.TG_API_ID }}
+      TG_API_HASH: ${{ secrets.TG_API_HASH }}
+      IG_USERNAME: ${{ secrets.IG_USERNAME }}
+      IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: نصب کتابخانه‌ها
+        run: python -m pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: بازیابی سشن تلگرام (اختیاری)
+        if: ${{ secrets.TG_SESSION_B64 != '' }}
+        env:
+          TG_SESSION_B64: ${{ secrets.TG_SESSION_B64 }}
+        run: printf '%s' "$TG_SESSION_B64" | base64 -d > "$GITHUB_WORKSPACE/froshgah.session"
+
+      - name: جمع‌آوری و ساخت سایت
+        run: |
+          python -m froshgah run \
+            --ig-tags "${{ inputs.ig_tags || 'پوشاک,مانتو' }}" \
+            --ig-keywords "${{ inputs.ig_keywords }}" \
+            --tg-queries "${{ inputs.tg_queries }}" \
+            --limit "${{ inputs.limit || 25 }}" \
+            ${{ inputs.no_bios && '--no-bios' || '' }} \
+            --data data/stores.json --site docs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stores-json
+          path: data/stores.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: کامیت و پوش نتیجه
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data docs
+          if git diff --cached --quiet; then
+            echo "تغییری نبود؛ کامیتی ساخته نشد."
+            exit 0
+          fi
+          git commit -m "data: به‌روزرسانی فروشگاه‌ها ($(date -u '+%Y-%m-%d %H:%M UTC'))"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

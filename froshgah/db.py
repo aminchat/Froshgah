@@ -110,6 +110,18 @@ class Database:
                 ),
             )
 
+    def set_seen(self, source: str, source_key: str, first_seen: str, last_seen: str) -> None:
+        """تاریخچه را (برای ادغام از فایل JSON قبلی) حفظ می‌کند."""
+        if not first_seen and not last_seen:
+            return
+        with self._connect() as conn:
+            conn.execute(
+                "UPDATE stores SET first_seen=COALESCE(NULLIF(?, ''), first_seen),"
+                " last_seen=COALESCE(NULLIF(?, ''), last_seen)"
+                " WHERE source=? AND source_key=?",
+                (first_seen or "", last_seen or "", source, source_key),
+            )
+
     # ——— خواندن ———
     def _all_rows(self) -> list[dict]:
         with self._connect() as conn:

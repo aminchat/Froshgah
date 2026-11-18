@@ -100,6 +100,42 @@ def _cmd_bot(_args) -> int:
     return 0
 
 
+def _cmd_export(args) -> int:
+    from .export import export_json, import_json
+
+    db = get_db()
+    n = import_json(db, args.seed) if args.seed else 0
+    path = export_json(db, args.out)
+    print(f"✅ نوشته شد: {path} ({db.stats()['total']} رکورد" + (f"، ادغام از قبل: {n}" if n else "") + ")")
+    return 0
+
+
+def _cmd_site(args) -> int:
+    from .site import build_site
+
+    out = build_site(get_db(), args.data, args.out)
+    print(f"✅ سایت ساخته شد: {out}/  (با `python -m http.server` در همان پوشه قابل دیدن است)")
+    return 0
+
+
+def _cmd_run(args) -> int:
+    from .run import run_job
+
+    print("⏳ اجرای جمع‌آوری + انتشار…")
+    summary = run_job(
+        instagram_tags=args.ig_tags,
+        instagram_keywords=args.ig_keywords,
+        telegram_queries=args.tg_queries,
+        limit=args.limit,
+        with_bios=not args.no_bios,
+        data_file=args.data,
+        site_dir=None if args.no_site else args.site,
+    )
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    errs = summary["instagram"]["errors"] + summary["telegram"]["errors"]
+    return 1 if errs and not summary["stores_total"] else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="froshgah",
@@ -143,6 +179,27 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("bot", help="اجرای ربات تلگرام")
     p.set_defaults(func=_cmd_bot)
+
+    p = sub.add_parser("run", help="یک اجرای کامل: جمع‌آوری + JSON + ساخت سایت (مناسب GitHub Actions)")
+    p.add_argument("--ig-tags", default="", help="هشتگ‌های اینستاگرام، با کاما: پوشاک,مانتو")
+    p.add_argument("--ig-keywords", default="", help="کلیدواژه‌های اینستاگرام، با کاما")
+    p.add_argument("--tg-queries", default="", help="عبارت‌های جستجوی تلگرام، با کاما")
+    p.add_argument("--limit", type=int, default=25, help="حداکثر پست/پیام برای هر عبارت")
+    p.add_argument("--no-bios", action="store_true", help="بیوی نویسنده‌ها خوانده نشود")
+    p.add_argument("--data", default="data/stores.json", help="فایل JSON داده‌ها")
+    p.add_argument("--site", default="docs", help="پوشه خروجی سایت")
+    p.add_argument("--no-site", action="store_true", help="سایت ساخته نشود")
+    p.set_defaults(func=_cmd_run)
+
+    p = sub.add_parser("export", help="خروجی JSON از دیتابیس")
+    p.add_argument("--out", default="data/stores.json")
+    p.add_argument("--seed", default="", help="فایل JSON قبلی برای ادغام قبل از خروجی")
+    p.set_defaults(func=_cmd_export)
+
+    p = sub.add_parser("site", help="ساخت سایت ایستا از دیتابیس")
+    p.add_argument("--data", default="data/stores.json")
+    p.add_argument("--out", default="docs")
+    p.set_defaults(func=_cmd_site)
 
     return parser
 
