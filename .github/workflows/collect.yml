@@ -69,14 +69,15 @@ jobs:
         run: printf '%s' "$TG_SESSION_B64" | base64 -d > "$GITHUB_WORKSPACE/froshgah.session"
 
       - name: جمع‌آوری و ساخت سایت
-        run: |
-          python -m froshgah run \
-            --ig-tags "${{ inputs.ig_tags || 'پوشاک,مانتو' }}" \
-            --ig-keywords "${{ inputs.ig_keywords }}" \
-            --tg-queries "${{ inputs.tg_queries }}" \
-            --limit "${{ inputs.limit || 25 }}" \
-            ${{ inputs.no_bios && '--no-bios' || '' }} \
-            --data data/stores.json --site docs
+        env:
+          IG_TAGS: ${{ inputs.ig_tags }}
+          IG_KEYWORDS: ${{ inputs.ig_keywords }}
+          TG_QUERIES: ${{ inputs.tg_queries }}
+          LIMIT: ${{ inputs.limit }}
+          NO_BIOS: ${{ inputs.no_bios && '1' || '0' }}
+          GIT_NAME: github-actions[bot]
+          GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: ./scripts/collect-and-publish.sh
 
       - uses: actions/upload-artifact@v4
         with:
@@ -84,16 +85,3 @@ jobs:
           path: data/stores.json
           if-no-files-found: warn
           retention-days: 30
-
-      - name: کامیت و پوش نتیجه
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data docs
-          if git diff --cached --quiet; then
-            echo "تغییری نبود؛ کامیتی ساخته نشد."
-            exit 0
-          fi
-          git commit -m "data: به‌روزرسانی فروشگاه‌ها ($(date -u '+%Y-%m-%d %H:%M UTC'))"
-          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
-          git push origin "HEAD:${GITHUB_REF_NAME}"

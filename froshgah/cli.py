@@ -154,7 +154,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     pi = psub.add_parser("ig", help="اینستاگرام (instaloader)")
     pi.add_argument("--hashtag", help="هشتگ بدون # (مثلاً پوشاک_زنانه)")
-    pi.add_argument("--keyword", help="کلیدواژه برای پیدا کردن هشتگ‌های مرتبط")
+    pi.add_argument("--keyword", help="کلیدواژه؛ به نام هشتگ احتمالی تبدیل می‌شود (مثلاً: فروشگاه پوشاک)")
     pi.add_argument("--limit", type=int, default=30, help="حداکثر تعداد پست (پیش‌فرض ۳۰)")
     pi.add_argument("--bios", action="store_true", help="خواندن بیوی نویسنده پست‌ها هم")
     pi.set_defaults(func=_cmd_collect)

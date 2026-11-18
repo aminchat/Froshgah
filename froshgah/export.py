@@ -16,8 +16,17 @@ def export_json(db: Database, out: str | Path) -> Path:
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
     rows = db.get_all()
+    generated = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
+    if out.exists():
+        # اگر داده‌ها تغییری نکرده‌اند، برچسب زمان را ثابت نگه می‌داریم تا دیف/کامیت الکی ساخته نشود
+        try:
+            prev = json.loads(out.read_text(encoding="utf-8"))
+            if isinstance(prev, dict) and prev.get("stores") == rows and prev.get("generated_at"):
+                generated = prev["generated_at"]
+        except (json.JSONDecodeError, OSError):
+            pass
     payload = {
-        "generated_at": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
+        "generated_at": generated,
         "count": len(rows),
         "stores": rows,
     }

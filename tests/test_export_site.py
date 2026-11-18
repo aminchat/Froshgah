@@ -66,3 +66,20 @@ def test_build_site_same_file_target(tmp_path):
     db = make_db(tmp_path)
     out = build_site(db, tmp_path / "site" / "data" / "stores.json", tmp_path / "site")
     assert isinstance(out, Path) and out.exists()
+
+
+def test_export_keeps_timestamp_when_nothing_changed(tmp_path):
+    """اجرای بی‌نتیجه (مثلاً محدودیت اینستاگرام) نباید دیف الکی بسازد."""
+    db = make_db(tmp_path)
+    db.upsert(Store(source="telegram", source_key="t", title="فروشگاه الف", city="تهران"))
+    path = export_json(db, tmp_path / "data" / "stores.json")
+    first = json.loads(path.read_text(encoding="utf-8"))
+    again = json.loads(export_json(db, path).read_text(encoding="utf-8"))
+    assert again["generated_at"] == first["generated_at"]
+
+    db.upsert(Store(source="telegram", source_key="t2", title="فروشگاه ب"))
+    third = json.loads(export_json(db, path).read_text(encoding="utf-8"))
+    assert third["count"] == 2
+    assert [d["source_key"] for d in third["stores"]] == ["t", "t2"]
+    # برچسب زمان فقط وقتی داده عوض شد معنا دارد؛ دقت آن دقیقه است
+    assert third["generated_at"] >= first["generated_at"]

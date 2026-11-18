@@ -1,6 +1,12 @@
-"""جمع‌آوری فروشگاه‌ها از اینستاگرام با instaloader (درخواستی/on-demand)."""
+"""جمع‌آوری فروشگاه‌ها از اینستاگرام با instaloader (درخواستی/on-demand).
+
+نکته: instaloader کتابخانه‌ای غیررسمی است؛ اینستاگرام ممکن است IP دیتاسنتر
+(مثل GitHub Actions) را محدود کند. برای همین همه خطاها گرفته و گزارش می‌شوند.
+"""
 from __future__ import annotations
 
+import inspect
+import re
 import time
 from typing import Iterator
 
@@ -8,24 +14,30 @@ from ..config import settings
 from ..db import get_db
 from ..extract import extract_stores
 
+_LOADER_KWARGS = dict(
+    download_pictures=False,
+    download_videos=False,
+    download_video_thumbnails=False,
+    download_geotags=False,
+    download_comments=False,
+    save_metadata=False,
+    compress_json=False,
+    quiet=True,
+    max_connection_attempts=2,
+)
+
 
 def _make_loader():
     from instaloader import Instaloader
 
-    loader = Instaloader(
-        download_pictures=False,
-        download_video_thumbs=False,
-        download_comments=False,
-        save_metadata=False,
-        compress_json=False,
-        quiet=True,
-        max_connection_attempts=2,
-    )
+    allowed = set(inspect.signature(Instaloader.__init__).parameters)
+    kwargs = {k: v for k, v in _LOADER_KWARGS.items() if k in allowed}
+    loader = Instaloader(**kwargs)
     if settings.ig_username and settings.ig_password:
         try:
             loader.login(settings.ig_username, settings.ig_password)
-        except Exception:
-            # ادامه به صورت ناشناس؛ ممکن است هشتگ‌ها محدود شوند
+        except Exception:  # noqa: BLE001
+            # ادامه به‌صورت ناشناس؛ معمولاً هشتگ‌ها محدودتر می‌شوند
             pass
     return loader
 
@@ -39,52 +51,63 @@ def _take(items: Iterator, n: int) -> list:
     return out
 
 
-def _posts_of(loader, hashtag_obj, n: int) -> list:
+def _hashtag_candidates(keyword: str) -> list[str]:
+    """کلیدواژه فارسی/انگلیسی → نام‌های هشتگ ممکن (اینستاگرام جستجوی متن آزاد ندارد)."""
+    cleaned = re.sub(r"[^\w\u0600-\u06FF]+", " ", keyword or "").strip().lower()
+    words = [w for w in cleaned.split() if w]
+    out: list[str] = []
+    if cleaned:
+        out.append(cleaned.replace(" ", "_"))
+    out.extend(words)
+    seen: set[str] = set()
+    return [x for x in out if len(x) > 1 and not (x in seen or seen.add(x))]
+
+
+def _posts_of(hashtag_obj, n: int) -> list:
+    for name in ("get_posts_resumable", "get_top_posts", "get_posts"):
+        fn = getattr(hashtag_obj, name, None)
+        if fn is not None:
+            try:
+                return _take(fn(), n)
+            except Exception:  # noqa: BLE001
+                continue
     posts = getattr(hashtag_obj, "posts", None)
-    if posts is None and hasattr(hashtag_obj, "get_posts"):
-        posts = hashtag_obj.get_posts()
-    if posts is None:
-        return []
-    return _take(posts, n)
+    return _take(posts, n) if posts is not None else []
+
+
+def _profile_text(profile) -> str:
+    """متن بیو + لینک بیرونی (محل اصلی شماره/آیدی فروشنده‌ها)."""
+    parts = [getattr(profile, "biography", None) or "", getattr(profile, "external_url", None) or ""]
+    return "\n".join(p for p in parts if p)
+
+
+def _post_text(post) -> str:
+    return (getattr(post, "caption", None) or getattr(post, "title", None) or "").strip()
 
 
 def _iter_posts(loader, hashtag: str | None, keyword: str | None, limit: int, result: dict) -> list:
     from instaloader import Hashtag
 
+    tags: list[str] = []
     if hashtag:
-        tag = hashtag.lstrip("#").strip()
+        tags = [hashtag.lstrip("#").strip()]
+    else:
+        tags = _hashtag_candidates(keyword or "")
+        if not tags:
+            result["errors"].append("کلیدواژه برای ساخت هشتگ مناسب نبود؛ از --hashtag استفاده کنید.")
+            return []
+
+    out: list = []
+    per = max(1, limit // max(1, len(tags))) + 2
+    for tag in tags[:6]:
         try:
             obj = Hashtag.from_name(loader.context, tag)
+            got = _posts_of(obj, per)
+            if not got:
+                result["errors"].append(f"#{tag}: پستی برنگشت (احتمال محدودیت اینستاگرام یا هشتگ اشتباه).")
+            out.extend(got)
         except Exception as e:  # noqa: BLE001
-            result["errors"].append(f"هشتگ #{tag}: {e}")
-            return []
-        return _posts_of(loader, obj, limit)
-
-    # جستجوی کلیدواژه → پیدا کردن هشتگ‌های مرتبط
-    tags: list[str] = []
-    searcher = getattr(loader.context, "search_hashtags", None)
-    if searcher is None:
-        result["errors"].append("این نسخه از instaloader جستجوی هشتگ ندارد؛ از --hashtag استفاده کنید.")
-        return []
-    try:
-        for h in searcher(keyword):
-            tags.append(h.name)
-            if len(tags) >= 5:
-                break
-    except Exception as e:  # noqa: BLE001
-        result["errors"].append(f"جستجوی هشتگ: {e}")
-        return []
-    if not tags:
-        result["errors"].append(f"هشتگی برای «{keyword}» پیدا نشد.")
-        return []
-    out: list = []
-    per = max(1, limit // len(tags)) + 2
-    for t in tags:
-        try:
-            obj = Hashtag.from_name(loader.context, t)
-            out.extend(_posts_of(loader, obj, per))
-        except Exception as e:  # noqa: BLE001
-            result["errors"].append(f"#{t}: {e}")
+            result["errors"].append(f"#{tag}: {e}")
         if len(out) >= limit:
             break
     return out[:limit]
@@ -97,22 +120,28 @@ def collect_instagram(
     with_bios: bool = False,
     delay: float | None = None,
 ) -> dict:
-    """جمع‌آوری پست‌های هشتگ/کلیدواژه و استخراج فروشگاه‌ها. (همزمان — در thread جداگانه اجرا شود)"""
+    """پست‌های هشتگ/کلیدواژه را می‌خواند و فروشگاه‌ها را استخراج و ذخیره می‌کند.
+
+    همگام (blocking) است — داخل ربات باید در thread جداگانه صدا زده شود.
+    """
     delay = settings.request_delay if delay is None else delay
     db = get_db()
-    result: dict = {"posts": 0, "stores": 0, "errors": [], "platform": "instagram"}
+    result: dict = {"posts": 0, "stores": 0, "authors": 0, "errors": [], "platform": "instagram"}
     if not hashtag and not keyword:
         result["errors"].append("hashtag یا keyword لازم است.")
         return result
 
-    loader = _make_loader()
-    authors: list[str] = []
-
     try:
-        posts = _iter_posts(loader, hashtag, keyword, limit, result)
-        for post in posts:
+        loader = _make_loader()
+    except Exception as e:  # noqa: BLE001
+        result["errors"].append(f"instaloader: {e}")
+        return result
+
+    authors: list[str] = []
+    try:
+        for post in _iter_posts(loader, hashtag, keyword, limit, result):
             try:
-                caption = getattr(post, "caption", None) or ""
+                caption = _post_text(post)
                 owner = getattr(post, "owner_username", None) or ""
                 url = getattr(post, "url", None) or ""
                 for s in extract_stores(caption, source="instagram", username=owner, title=owner, url=url):
@@ -131,10 +160,10 @@ def collect_instagram(
             for uname in authors[:10]:
                 try:
                     profile = Profile.from_username(loader.context, uname)
-                    bio = getattr(profile, "bio", None) or ""
-                    if bio:
+                    text = _profile_text(profile)
+                    if text:
                         for s in extract_stores(
-                            bio,
+                            text,
                             source="instagram",
                             username=uname,
                             title=uname,
@@ -142,11 +171,12 @@ def collect_instagram(
                         ):
                             db.upsert(s)
                             result["stores"] += 1
+                    result["authors"] += 1
                 except Exception as e:  # noqa: BLE001
-                    result["errors"].append(f"bio @{uname}: {e}")
+                    result["errors"].append(f"biography @{uname}: {e}")
                 time.sleep(delay)
     except Exception as e:  # noqa: BLE001
         result["errors"].append(str(e))
 
-    result["errors"] = result["errors"][:10]
+    result["errors"] = list(dict.fromkeys(result["errors"]))[:10]
     return result
