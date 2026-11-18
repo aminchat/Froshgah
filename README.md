@@ -102,7 +102,14 @@ cd vercel && node dev-server.js     # رمز تصادفی می‌سازد و چ�
 node tests/web_smoke.mjs            # تست یکپارچه سرویس (۱۲ بررسی)
 ```
 
-**دیپلوی:** در Vercel گزینه *Import Git Repository* → مخزن این پروژه → **Root Directory = `vercel`** → بدون build command (فایل‌های سایت از `vercel/public` سرو می‌شوند و `vercel/api/index.js` همان تابع سرور است). پوشه `vercel/public/` با `python -m froshgah site --vercel-dir vercel` بازسازی و کامیت می‌شود.
+**دیپلوی (۴ کار در Vercel):**
+
+1. **Add New… → Project → Import** مخزن `Froshgah` را انتخاب کنید (اگر مخزن در لیست نبود، از *GitHub App → Configure* دسترسی `Froshgah` را بدهید).
+2. در همان پنجره **Root Directory** را `vercel` بگذارید؛ Build Command، Install Command و Output Directory را دست نزنید (`vercel/vercel.json` همه‌چیز را تنظیم می‌کند).
+3. **Environment Variables** همان جدول بالا را پر کنید.
+4. چون فعلاً همه‌چیز روی شاخه کاری است و `main` دست‌نخورده: در *Project Settings → Git → Production Branch* را روی `arena/e5aae2ae-froshgah` بگذارید (وگرنه فقط preview ساخته می‌شود). اگر preview باز نشد، *Settings → Deployment Protection* را برای این پروژه خاموش کنید.
+
+پوشه `vercel/public/` تولیدی است و در مخزن کامیت شده؛ هر بار که داده عوض می‌شود با `python -m froshgah site --vercel-dir vercel` (یا همان `scripts/collect-and-publish.sh`) بازسازی می‌شود. دیپلوی از گیت، هر پوش را خودش به‌روز می‌کند.
 
 ## ربات تلگرام (اختیاری)
 
