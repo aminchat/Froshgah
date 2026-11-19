@@ -1,7 +1,0 @@
-{
-  "name": "froshgah-web",
-  "version": "0.1.0",
-  "private": true,
-  "description": "پنل وب فروشگاه‌یاب (Vercel) — بدون وابستگی",
-  "engines": { "node": ">=18" }
-}

@@ -1,6 +1,6 @@
 /* اجرای سرویس وب روی همین رایانه (برای تست قبل از دیپلوی Vercel).
  *
- *   cd vercel && node dev-server.js
+ *   node tools/serve-web.js
  *   → http://127.0.0.1:8000
  *
  * اگر SITE_PASSWORD را ندهید، یکی تصادفی ساخته و چاپ می‌کند (فقط برای تست محلی).
@@ -10,7 +10,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
-const ROOT = __dirname;
+const ROOT = require("path").join(__dirname, "..");
 const PORT = Number(process.env.PORT || 8000);
 const PUB = path.join(ROOT, "public");
 

@@ -115,8 +115,8 @@ def _cmd_site(args) -> int:
     from .site import build_site
 
     out = build_site(get_db(), args.data, args.out)
-    if args.vercel_dir:
-        vout = build_site(get_db(), args.data, args.vercel_dir, public=True)
+    if args.public_dir:
+        vout = build_site(get_db(), args.data, args.public_dir, public=True)
         print(f"✅ پوشه Vercel هم ساخته شد: {vout}/")
     print(f"✅ سایت ساخته شد: {out}/  (با `python -m http.server` در همان پوشه قابل دیدن است)")
     return 0
@@ -154,7 +154,7 @@ def _cmd_run(args) -> int:
         with_bios=not args.no_bios,
         data_file=args.data,
         site_dir=None if args.no_site else args.site,
-        vercel_dir=args.vercel_dir or None,
+        public_dir=args.public_dir or None,
         payload=payload,
         post_url=args.post_url,
     )
@@ -241,7 +241,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-bios", action="store_true", help="بیوی نویسنده‌ها خوانده نشود")
     p.add_argument("--data", default="data/stores.json", help="فایل JSON داده‌ها")
     p.add_argument("--site", default="docs", help="پوشه خروجی سایت (GitHub Pages)")
-    p.add_argument("--vercel-dir", default="", help="پوشه پروژه Vercel (مثلاً vercel) تا public/ آن هم ساخته شود")
+    p.add_argument("--public-dir", default=".", help="ریشه پروژه Vercel تا پوشه public/ آن هم ساخته شود (خالی = نساز)")
     p.add_argument("--payload", default="", help="بار رمزنگاری‌شده پنل وب (متن base64 یا @فایل)")
     p.add_argument("--post-url", default="", help="اگر داده باید به سرویسی برگردد: URL کامل")
     p.add_argument("--no-site", action="store_true", help="سایت ساخته نشود")
@@ -255,7 +255,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("site", help="ساخت سایت ایستا از دیتابیس")
     p.add_argument("--data", default="data/stores.json")
     p.add_argument("--out", default="docs")
-    p.add_argument("--vercel-dir", default="", help="پوشه پروژه Vercel تا public/ آن هم ساخته شود")
+    p.add_argument("--public-dir", default=".", help="ریشه پروژه Vercel تا public/ آن هم ساخته شود (خالی = نساز)")
     p.set_defaults(func=_cmd_site)
 
     p = sub.add_parser("setup", help="پرسش و ساخت فایل .env (رمزها فقط در همین رایانه می‌مانند)")

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const HANDLER = join(ROOT, "vercel/api/index.js");
+const HANDLER = join(ROOT, "api/index.js");
 const PASSWORD = "test-pass-۱۲۳";
 const SECRET = "unit-test-secret";
 

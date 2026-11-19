@@ -90,7 +90,7 @@ def test_build_site_vercel_injects_config(tmp_path: Path):
     db = Database(tmp_path / "t.db")
     db.init()
     db.upsert(Store(source="telegram", source_key="a", title="فروشگاه"))
-    out = build_site(db, tmp_path / "data/stores.json", tmp_path / "vercel", public=True)
+    out = build_site(db, tmp_path / "data/stores.json", tmp_path, public=True)
     html = (out / "index.html").read_text(encoding="utf-8")
     assert "window.FROSHGAH=" in html and '"/api/data"' in html
     assert (out / "api" / "index.js").exists() is False  # فقط فایل‌های وب کپی می‌شوند

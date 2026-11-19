@@ -67,7 +67,7 @@ def run_job(
     with_bios: bool = True,
     data_file: str | Path = "data/stores.json",
     site_dir: str | Path | None = "docs",
-    vercel_dir: str | Path | None = None,
+    public_dir: str | Path | None = ".",
     db: Database | None = None,
     payload: dict | None = None,
     post_url: str = "",
@@ -143,8 +143,8 @@ def run_job(
     export_json(db, data_file)
     if site_dir:
         build_site(db, data_file, site_dir)
-    if vercel_dir:
-        build_site(db, data_file, vercel_dir, public=True)
+    if public_dir:
+        build_site(db, data_file, public_dir, public=True)
     summary["stores_total"] = db.stats()["total"]
     summary["duration"] = round(time.time() - started, 1)
 

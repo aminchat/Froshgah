@@ -66,7 +66,7 @@ Pages روی این مخزن از شاخه کاری، پوشه `/docs` فعال 
 
 ## راه سوم: سرویس وب روی Vercel (لاگین و فرم در خود صفحه)
 
-اگر می‌خواهید مثل یک اپ واقعی باشد: آدرس ثابت، **صفحه ورود**، و دکمه «جمع‌آوری» که همان‌جا نام کاربری/رمز اینستاگرام را می‌گیرد — این نسخه در پوشه `vercel/` است (Node.js بدون هیچ کتابخانه‌ای).
+اگر می‌خواهید مثل یک اپ واقعی باشد: آدرس ثابت، **صفحه ورود**، و دکمه «جمع‌آوری» که همان‌جا نام کاربری/رمز اینستاگرام را می‌گیرد — سرویسش `api/index.js` است (Node.js بدون هیچ کتابخانه‌ای) و فایل‌های سایتش از `public/` سرو می‌شوند.
 
 **چطور کار می‌کند:**
 
@@ -107,18 +107,18 @@ Pages روی این مخزن از شاخه کاری، پوشه `/docs` فعال 
 **تست محلی:**
 
 ```bash
-cd vercel && node dev-server.js     # رمز تصادفی می‌سازد و چاپ می‌کند → http://127.0.0.1:8000
-node tests/web_smoke.mjs            # تست یکپارچه سرویس (۱۲ بررسی)
+node tools/serve-web.js             # رمز تصادفی می‌سازد و چاپ می‌کند → http://127.0.0.1:8000
+node tests/web_smoke.mjs             # تست یکپارچه سرویس (۱۴ بررسی)
 ```
 
 **دیپلوی (۴ کار در Vercel):**
 
 1. **Add New… → Project → Import** مخزن `Froshgah` را انتخاب کنید (اگر مخزن در لیست نبود، از *GitHub App → Configure* دسترسی `Froshgah` را بدهید).
-2. در همان پنجره **Root Directory** را `vercel` بگذارید؛ Build Command، Install Command و Output Directory را دست نزنید (`vercel/vercel.json` همه‌چیز را تنظیم می‌کند).
+2. وقتی **Root Directory** را پرسید، همان **`Froshgah (root)`** را انتخاب کنید؛ Build Command، Install Command و Output Directory را دست نزنید (فایل `vercel.json` ریشه مخزن همه‌چیز را تنظیم می‌کند: خروجی = `public/`، تابع = `api/index.js`).
 3. **Environment Variables** همان جدول بالا را پر کنید.
 4. چون فعلاً همه‌چیز روی شاخه کاری است و `main` دست‌نخورده: در *Project Settings → Git → Production Branch* را روی `arena/e5aae2ae-froshgah` بگذارید (وگرنه فقط preview ساخته می‌شود). اگر preview باز نشد، *Settings → Deployment Protection* را برای این پروژه خاموش کنید.
 
-پوشه `vercel/public/` تولیدی است و در مخزن کامیت شده؛ هر بار که داده عوض می‌شود با `python -m froshgah site --vercel-dir vercel` (یا همان `scripts/collect-and-publish.sh`) بازسازی می‌شود. دیپلوی از گیت، هر پوش را خودش به‌روز می‌کند.
+پوشه `public/` تولیدی است و در مخزن کامیت شده؛ هر بار که داده عوض می‌شود با `python -m froshgah site` (که `docs/` و `public/` هر دو را می‌سازد) یا همان `scripts/collect-and-publish.sh` بازسازی می‌شود. دیپلوی از گیت، هر پوش را خودش به‌روز می‌کند.
 
 ## ربات تلگرام (اختیاری)
 
@@ -166,10 +166,10 @@ froshgah/            موتور پایتون (استخراج، دیتابیس، 
 ├── bot.py / cli.py  ربات تلگرام و خط فرمان
 └── collectors/      instagram.py (instaloader) و telegram.py (Telethon)
 web/                 سایت ایستا (HTML/CSS/JS خالص، جستجو سمت مرورگر) — منبع هر دو نسخه
-vercel/              سرویس وب برای Vercel: قفل لاگین + فرم جمع‌آوری (Node بدون وابستگی)
-├── api/index.js     هندلر: /api/login /api/data /api/status /api/collect /api/export.csv
-├── public/          خروجی build از web/ (با `site --vercel-dir vercel` ساخته می‌شود)
-└── dev-server.js    اجرای همان سرویس روی کامپیوتر خودتان
+api/index.js         سرویس وب (Vercel): قفل لاگین + /api/data /api/status /api/collect /api/config /api/export.csv
+public/              خروجی build از web/ که Vercel به‌صورت استاتیک سرو می‌کند (با `python -m froshgah site` ساخته می‌شود)
+vercel.json          تنظیم دیپلوی Vercel: خروجی = public، تابع = api/index.js، rewrite، maxDuration
+tools/serve-web.js   اجرای همان سرویس روی کامپیوتر خودتان (بدون Vercel)
 froshgah/payload.py  رمزنگاری AES-256-GCM بار فرم (هم‌خوان با node:crypto)
 scripts/collect-and-publish.sh   جمع‌آوری + انتشار با یک دستور
 data/stores.json     داده‌ها (در گیت کامیت می‌شود)

@@ -78,7 +78,6 @@ jobs:
       - name: جمع‌آوری و ساخت سایت
         env:
           PAYLOAD: ${{ inputs.payload }}
-          VERCEL_DIR: vercel
           IG_TAGS: ${{ inputs.ig_tags }}
           IG_KEYWORDS: ${{ inputs.ig_keywords }}
           TG_QUERIES: ${{ inputs.tg_queries }}
