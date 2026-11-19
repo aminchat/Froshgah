@@ -37,6 +37,31 @@ python -m froshgah run --ig-tags "پوشاک,مانتو" --tg-queries "فروش�
 
 **برای تلگرام** (اختیاری): اول یک‌بار `python -m froshgah login` را در ترمینال Codespaces بزنید تا فایل `froshgah.session` ساخته شود؛ بعد `base64 -w0 froshgah.session` را بگیرید و به‌عنوان راز `TG_SESSION_B64` ذخیره کنید تا در اجراهای بعدی لازم نباشد دوباره لاگین کنید.
 
+### اعتبارنامه‌ها، مرحله‌به‌مرحله
+
+**اینستاگرام — لازم است؟** نه. فرمِ «جمع‌آوری از این صفحه» دو خانه `ig_user` / `ig_pass` دارد؛ اگر آنجا بنویسید، رمز فقط در همان اجرا در حافظه runner باز می‌شود و هیچ جایی ذخیره نمی‌شود. رازهای `IG_USERNAME` / `IG_PASSWORD` فقط برای راحتی است (تا هر بار تایپ نکنید) — اگر پر شوند، همان‌ها جای پیش‌فرض را می‌گیرند و خانه‌های فرم اختیاری می‌شوند.
+
+- حسابی که می‌دهید **باید تأیید دو مرحله‌ای (2FA) نداشته باشد**: اگر داشته باشد لاگین خطا می‌دهد و برنامه بی‌صدا به حالت ناشناس برمی‌گردد (نتایج کمتر، بدون پیام).
+- یک حساب دوم/بی‌استفاده بهتر است؛ اینستاگرام از IP دیتاسنتر (runner گیت‌هاب) زود چالش/۴۲۹ می‌دهد. با `limit` کوچک (۱۰) شروع کنید.
+
+**تلگرام — سه مقدار لازم دارد** (`TG_API_ID`، `TG_API_HASH`، `TG_SESSION_B64`):
+
+1. **api_id/api_hash:** به `https://my.telegram.org/apps` بروید ← با شماره موبایل (با پیش‌شماره، مثل `+98…`) وارد شوید ← **API development tools** ← یک عنوان ساده (مثلاً `Froshgah`) + platform = *Web* ← **Create application**. از همان صفحه `api_id` (فقط رقم) و `api_hash` (حرف+رقم) را کپی کنید. `api_hash` رمز حساب **نیست**.
+2. **ساخت فایل سشن (یک‌بار، در Codespaces):**
+   ```bash
+   cd /workspaces/Froshgah
+   git fetch origin && git checkout arena/e5aae2ae-froshgah
+   python -m venv .venv && .venv/bin/pip install -r requirements.txt
+   .venv/bin/python -m froshgah setup      # TG_API_ID و TG_API_HASH را می‌پرسد → .env
+   .venv/bin/python -m froshgah login       # شماره + کد یک‌بارمصرف تلگرام → froshgah.session
+   .venv/bin/python -m froshgah doctor      # باید دو خط اینستاگرام/تلگرام سبز شود
+   base64 -w0 froshgah.session              # خروجی = مقدار TG_SESSION_B64
+   ```
+   هم `.env` و هم `*.session` در `.gitignore` هستند؛ بازم **هرگز** آن‌ها را add/commit نکنید.
+3. **سه راز در گیت‌هاب:** Settings → Secrets and variables → Actions → New repository secret با همین نام‌ها. `TG_API_ID`/`TG_API_HASH` باید **همان جفتی** باشند که سشن با آن ساخته شده (سشن به api_id قفل است؛ با api_id دیگری باز نمی‌شود).
+4. **Vercel چیزی برای تلگرام نمی‌خواهد** و لازم نیست Redeploy بزنید: سشن مستقیم از رازِ Actions خوانده می‌شود، پس خانه‌های `TG_API_ID`/`TG_API_HASH` در فرم پنل می‌توانند خالی بمانند.
+5. **اگر خواستید سشن را بازنشسته کنید:** در تلگرام Settings → Devices → *Terminate all other sessions* — با آن، `TG_SESSION_B64` هم از کار می‌افتد و فقط کافی است مرحله ۲ را تکرار کنید.
+
 ---
 
 ## راه دوم: GitHub Actions (اجرای خودکار، بدون باز کردن Codespaces)
