@@ -14,9 +14,15 @@
 
 const crypto = require("crypto");
 
+/* نام مخزن و شاخه راز نیستند (روی گیت‌هاب عمومی دیده می‌شوند)، پس پیش‌فرضشان داخل کد است
+ * تا لازم نباشد برای آن‌ها در Vercel متغیر بسازید. اگر متغیر را ست کنید (حتی با مقدار خالی)
+ * همان پیش‌فرض را می‌پوشاند. بعد از ادغام روی main، مقدار GITHUB_REF=main را در Vercel بگذارید. */
+const DEFAULTS = { repo: "aminchat/Froshgah", ref: "arena/e5aae2ae-froshgah" };
+const envOr = (name, fallback) => (process.env[name] === undefined ? fallback : process.env[name]);
+
 const CFG = {
-  repo: process.env.GITHUB_REPO || "",            // مثل: aminchat/Froshgah
-  ref: process.env.GITHUB_REF || "main",
+  repo: envOr("GITHUB_REPO", DEFAULTS.repo),      // مثل: aminchat/Froshgah
+  ref: envOr("GITHUB_REF", DEFAULTS.ref),
   token: process.env.GITHUB_TOKEN || "",          // fine-grained PAT (Contents: RW)
   workflow: process.env.WORKFLOW_FILE || "collect.yml",
   dataPath: process.env.DATA_PATH || "data/stores.json",

@@ -18,6 +18,7 @@ const PUB = path.join(ROOT, "public");
 process.env.SITE_PASSWORD ||= crypto.randomBytes(9).toString("base64url");
 process.env.APP_SECRET ||= crypto.randomBytes(24).toString("base64url");
 process.env.DATA_URL ||= `http://127.0.0.1:${PORT}/data/stores.json`;
+process.env.GITHUB_TOKEN ||= "";   // تا چک‌لیست پنل، نبودِ توکن را درست بگوید (وگرنه env سیستم نشت می‌کند)
 
 const handler = require(path.join(ROOT, "api", "index.js"));
 

@@ -87,9 +87,9 @@ Pages روی این مخزن از شاخه کاری، پوشه `/docs` فعال 
 |---|---|
 | `SITE_PASSWORD` | رمزی که در صفحه ورود می‌زنید (خودتان یک عبارت بلند بسازید) |
 | `APP_SECRET` | کلید رمزنگاری بارِ فرم و امضای کوکی؛ **باید** در GitHub هم به‌عنوان Secret با همین مقدار باشد |
-| `GITHUB_REPO` | مثل `aminchat/Froshgah` |
-| `GITHUB_REF` | شاخه‌ای که داده در آن است (فعلاً `arena/e5aae2ae-froshgah`) |
-| `GITHUB_TOKEN` | یک Fine-grained PAT با اجازه `Contents: Read` (+ `Actions: Write` برای دکمه جمع‌آوری) |
+| `GITHUB_TOKEN` | Fine-grained PAT با همین دو سطح: **Actions: Read and write** (دکمه جمع‌آوری + نمایش وضعیت اجرا) و **Contents: Read-only** (خواندن داده، لازمِ مخزن خصوصی) |
+| `GITHUB_REPO` | **اختیاری** — مثل `aminchat/Froshgah`؛ پیش‌فرضش داخل `api/index.js` است، چون نام مخزن راز نیست |
+| `GITHUB_REF` | **اختیاری** — شاخه‌ای که داده در آن است (پیش‌فرض `arena/e5aae2ae-froshgah`). بعد از ادغام روی `main` این را `main` بگذارید |
 | `WORKFLOW_FILE` | پیش‌فرض `collect.yml` |
 | `ALLOW_PUBLIC_DATA` | فقط اگر خواستید سایت بدون لاگین باز باشد: `1` |
 
@@ -100,9 +100,10 @@ Pages روی این مخزن از شاخه کاری، پوشه `/docs` فعال 
 - `SITE_PASSWORD` را واقعاً لازم دارید (هر بار ورود). اگر گمش کردید چیزی از دست نمی‌رود: در Vercel یک مقدار تازه بگذارید و Redeploy کنید.
 - `APP_SECRET` جایی داده‌ها را قفل نمی‌کند (ما چیزی ذخیره نمی‌کنیم)، پس اگر گم شود هیچ داده‌ای از بین نمی‌رود؛ فقط باید در **هر دو** طرف (Vercel و GitHub Secrets) با یک مقدار تازه یکی‌شده عوضش کنید.
 - اگر دو طرف یکی نباشند، خطای «بازکردن بار پنل وب ناموفق بود» می‌گیرید — درمانش فقط همین است که هر دو را با یک مقدار تازه ست کنید.
-- `GITHUB_TOKEN` (اگر منقضی شد) هم همان‌جا: Vercel → Environment Variables → مقدار تازه → Redeploy.
+- `GITHUB_TOKEN` را هم لازم نیست جایی نگه دارید: اگر گم/منقضی/لو رفت، یکی تازه بسازید، در Vercel → Environment Variables مقدار تازه بگذارید، Redeploy کنید و توکن قدیمی را در گیت‌هاب Delete کنید. (توکن گم‌شده هیچ داده‌ای را قفل نکرده که بخواهید پس بیاوریدش.)
+- چون مقدارهای Sensitive در Vercel دوباره نمایش داده نمی‌شوند، برای اینکه «درست تایپ کردم یا نه» را بفهمید مقدار را دستی تایپ نکنید: با `python -m froshgah secret` بسازید و کپی/پیست کنید، بعد آدرس `/api/config` را باز کنید — اگر `{"ok": true` بود، همه‌چیز سر جایش است.
 
-**ساخت رشته‌های محرمانه:** با `python -m froshgah secret` (یا `--count 2` برای دو رشته) یک مقدار تصادفی بسازید — یکی برای `APP_SECRET` و یکی برای `SITE_PASSWORD`. این مقدارها را در چت، ایمیل یا تیکتSupport ننویسید: بارِ فرمِ جمع‌آوری به‌صورت رمزنگاری‌شده در صفحه اجرای Actions دیده می‌شود، پس اگر کلیدش جایی عمومی بماند، رمز اینستاگرام شما هم قابل بازکردن است. هر ۶ ماه یک‌بار چرخشش خوب است (هم در Vercel هم در GitHub Secrets، با هم).
+**ساخت رشته‌های محرمانه:** با `python -m froshgah secret` (یا `--count 2` برای دو رشته) یک مقدار تصادفی بسازید — یکی برای `APP_SECRET` و یکی برای `SITE_PASSWORD`. این مقدارها را در چت، ایمیل یا تیکت پشتیبانی ننویسید: بارِ فرمِ جمع‌آوری به‌صورت رمزنگاری‌شده در صفحه اجرای Actions دیده می‌شود، پس اگر کلیدش جایی عمومی بماند، رمز اینستاگرام شما هم قابل بازکردن است. هر ۶ ماه یک‌بار چرخشش خوب است (هم در Vercel هم در GitHub Secrets، با هم).
 
 **تست محلی:**
 
@@ -115,7 +116,7 @@ node tests/web_smoke.mjs             # تست یکپارچه سرویس (۱۴ ب
 
 1. **Add New… → Project → Import** مخزن `Froshgah` را انتخاب کنید (اگر مخزن در لیست نبود، از *GitHub App → Configure* دسترسی `Froshgah` را بدهید).
 2. وقتی **Root Directory** را پرسید، همان **`Froshgah (root)`** را انتخاب کنید؛ Build Command، Install Command و Output Directory را دست نزنید (فایل `vercel.json` ریشه مخزن همه‌چیز را تنظیم می‌کند: خروجی = `public/`، تابع = `api/index.js`).
-3. **Environment Variables** همان جدول بالا را پر کنید.
+3. **Environment Variables** همان جدول بالا را پر کنید (سه تا لازم است: `APP_SECRET`، `SITE_PASSWORD`، `GITHUB_TOKEN`). نوع هر سه را **Sensitive / Encrypted** بگذارید و `GITHUB_REPO`/`GITHUB_REF` را اگر ساختید **Plain** بگذارید — متغیرهای Sensitive بعداً در داشبورد خوانده نمی‌شوند، پس نباید چیزی که برای عیب‌یابی به آن نگاه می‌کنید داخلشان باشد.
 4. چون فعلاً همه‌چیز روی شاخه کاری است و `main` دست‌نخورده: در *Project Settings → Git → Production Branch* را روی `arena/e5aae2ae-froshgah` بگذارید (وگرنه فقط preview ساخته می‌شود). اگر preview باز نشد، *Settings → Deployment Protection* را برای این پروژه خاموش کنید.
 
 پوشه `public/` تولیدی است و در مخزن کامیت شده؛ هر بار که داده عوض می‌شود با `python -m froshgah site` (که `docs/` و `public/` هر دو را می‌سازد) یا همان `scripts/collect-and-publish.sh` بازسازی می‌شود. دیپلوی از گیت، هر پوش را خودش به‌روز می‌کند.
